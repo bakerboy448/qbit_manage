@@ -28,9 +28,10 @@ body:
   - type: input
     id: logs
     attributes:
-      label: Logs
+      label: Debug Logs
       description: >
         Please share the relevant log file with the error on [Gist](https://gist.github.com).
+        Run QbitManage with [debug logging](https://github.com/StuffAnThings/qbit_manage/wiki/Commands). Issues with only INFO logs will be closed.
       placeholder: "https://gist.github.com"
     validations:
       required: true
