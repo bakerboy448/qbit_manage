@@ -1,7 +1,7 @@
 bencodepy==0.9.5
 GitPython==3.1.46
 qbittorrent-api==2023.11.57
-requests==2.32.5
+requests==2.33.0
 retrying==1.4.2
 ruamel.yaml==0.19.1
 schedule==1.2.2
