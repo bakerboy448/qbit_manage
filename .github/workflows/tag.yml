@@ -19,7 +19,12 @@ jobs:
 
       - uses: actions/checkout@v6
         with:
-          token: ${{ secrets.PAT }}
+          # Prefer a PAT so the tag push triggers the downstream `v*` tag workflows
+          # (version.yml / pypi-publish.yml). Fall back to GITHUB_TOKEN so forks
+          # without a PAT secret still create the tag instead of hard-failing with
+          # "Input required and not supplied: token". (Downstream tag workflows are
+          # not triggered by a GITHUB_TOKEN-pushed tag — set a PAT secret for those.)
+          token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
           fetch-depth: 2
 
       # Pinned per supply-chain hygiene; bump SHA on next dependabot review

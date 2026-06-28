@@ -502,7 +502,7 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           body_path: CHANGELOG
-          token: ${{ secrets.PAT }}
+          token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
           tag_name: ${{ steps.get_version.outputs.VERSION }}
           files: release-assets/*
           draft: false
