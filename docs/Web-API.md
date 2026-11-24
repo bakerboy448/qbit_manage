@@ -1,10 +1,8 @@
 # Web API Documentation
 
-> Last validated against qbit_manage v4.7.1. See [v4 Migration Guide](v4-Migration-Guide.md) for changes since v4.0.
-
 ## Overview
 
-qBit Manage provides a REST API that allows you to trigger commands via HTTP requests. The API server runs at 8181, listening to all hostnames by default, and can be configured using the `--host` and `--port` options or `QBT_HOST` and `QBT_PORT` environment variables.
+qBit Manage provides a REST API that allows you to trigger commands via HTTP requests. The server uses port 8181 and binds to `127.0.0.1` by default (`0.0.0.0` in Docker). Change them with `--host` and `--port` or `QBT_HOST` and `QBT_PORT`. It is off by default; enable it with `--web-server` or `QBT_WEB_SERVER=true`. Any non-loopback bind needs authentication. See [Security](Security) before you expose it.
 
 ## Running the Web Server
 
@@ -23,17 +21,16 @@ services:
     container_name: qbit_manage
     environment:
       - QBT_WEB_SERVER=true # Enable web server (set to false to disable)
-      - QBT_HOST=0.0.0.0 # Set web server host
       - QBT_PORT=8181 # Set web server port
     ports:
-      - "8181:8181" # Map container port to host
+      - "127.0.0.1:8181:8181" # Publish on the host only
     volumes:
       - /path/to/config:/config
 ```
 
 ## API Endpoints
 
-> Most endpoints require authentication via API key or basic auth when authentication is enabled. **Exceptions:** `GET /api/health`, `GET /api/version`, and `GET /api/get_base_url` are always public (unconditionally bypassed by `AuthenticationMiddleware` per `modules/auth.py` `skip_auth_paths`), even when authentication is enabled.
+> Most endpoints require authentication via API key or basic auth when authentication is enabled. **Exceptions:** `GET /api/health`, `GET /api/version`, and `GET /api/get_base_url` are always public even when authentication is enabled.
 
 ### Endpoint Summary
 
