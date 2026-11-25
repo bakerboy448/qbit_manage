@@ -1916,6 +1916,7 @@ class WebAPI:
                 "allow_local_login",
                 "oidc_metadata_url",
                 "oidc_client_id",
+                "oidc_username",
                 "oidc_sub",
                 "oidc_email",
                 "trusted_proxies",

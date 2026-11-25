@@ -96,7 +96,12 @@ export class SecurityComponent {
                             <input type="password" id="oidc-client-secret" class="form-input" autocomplete="new-password" placeholder="${s.has_oidc_client_secret ? '&lt;redacted&gt; (leave blank to keep)' : 'Enter client secret'}">
                         </div>
                         <div class="form-group">
-                            <label for="oidc-sub" class="form-label">Allowed user (sub claim)</label>
+                            <label for="oidc-username" class="form-label">Allowed username (from your provider)</label>
+                            <input type="text" id="oidc-username" class="form-input" value="${this.esc(s.oidc_username)}">
+                            <div class="field-description">Case-sensitive. The provider must share the profile scope.</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="oidc-sub" class="form-label">Or allowed user ID (sub claim)</label>
                             <input type="text" id="oidc-sub" class="form-input" value="${this.esc(s.oidc_sub)}">
                         </div>
                         <div class="form-group">
@@ -213,6 +218,7 @@ export class SecurityComponent {
             oidc_metadata_url: value('oidc-metadata-url'),
             oidc_client_id: value('oidc-client-id'),
             oidc_client_secret: document.getElementById('oidc-client-secret')?.value || '',
+            oidc_username: value('oidc-username'),
             oidc_sub: value('oidc-sub'),
             oidc_email: value('oidc-email'),
             allow_local_login: !!document.getElementById('allow-local-login')?.checked
@@ -229,8 +235,8 @@ export class SecurityComponent {
                 return showToast('Password needs 8 or more characters and 3 of: uppercase, lowercase, number, special (!@#$%^&*)', 'error');
             }
         }
-        if (data.mode === 'oidc' && (!data.public_url || !data.oidc_metadata_url || !data.oidc_client_id || !(data.oidc_sub || data.oidc_email))) {
-            return showToast('OpenID Connect needs the public URL, discovery URL, client ID, and an allowed user or email', 'error');
+        if (data.mode === 'oidc' && (!data.public_url || !data.oidc_metadata_url || !data.oidc_client_id || !(data.oidc_username || data.oidc_sub || data.oidc_email))) {
+            return showToast('OpenID Connect needs the public URL, discovery URL, client ID, and an allowed username, user ID, or email', 'error');
         }
         if (data.mode === 'api_only' && this.settings.mode !== 'api_only') {
             if (!confirm('API only mode has no browser login. This page signs out and cannot sign in again until the mode is changed in qbm_settings.yml. Continue?')) return;

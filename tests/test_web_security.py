@@ -566,6 +566,24 @@ def test_oidc_accepts_the_configured_sub_only():
     assert not auth.oidc_identity_allowed({"sub": "user-2"}, oidc_settings())
 
 
+def test_oidc_accepts_the_configured_username_only():
+    settings = oidc_settings(oidc_sub="", oidc_username="alice")
+    assert auth.oidc_identity_allowed({"sub": "hashed", "preferred_username": "alice"}, settings)
+    assert not auth.oidc_identity_allowed({"sub": "hashed", "preferred_username": "bob"}, settings)
+    assert not auth.oidc_identity_allowed({"sub": "hashed", "preferred_username": "Alice"}, settings)
+    assert not auth.oidc_identity_allowed({"sub": "hashed"}, settings)
+
+
+def test_a_configured_oidc_username_is_authoritative():
+    settings = oidc_settings(oidc_sub="user-1", oidc_username="alice", oidc_email="me@example.com")
+    assert not auth.oidc_identity_allowed({"sub": "user-1", "preferred_username": "bob"}, settings)
+    assert auth.oidc_identity_allowed({"sub": "other", "preferred_username": "alice"}, settings)
+
+
+def test_oidc_username_alone_counts_as_credentials():
+    assert auth.has_credentials(oidc_settings(oidc_sub="", oidc_username="alice"))
+
+
 def test_oidc_email_needs_email_verified_true():
     settings = oidc_settings(oidc_sub="", oidc_email="me@example.com")
     assert auth.oidc_identity_allowed({"sub": "x", "email": "me@example.com", "email_verified": True}, settings)

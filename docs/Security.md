@@ -17,7 +17,7 @@ Set the mode in the Web UI under Security, or under `authentication:` in `qbm_se
 | Mode | What it does |
 |---|---|
 | `local` (default) | Login form with a username and password. Only an Argon2 hash is stored. A signed cookie keeps you logged in for 7 days. |
-| `oidc` | Single-user OpenID Connect login (for example Authentik). The local password is off unless `allow_local_login: true`. Prefer `oidc_sub`; `oidc_email` trusts the provider's email claim, so use it only with a provider you run yourself. |
+| `oidc` | Single-user OpenID Connect login (for example Authentik). The local password is off unless `allow_local_login: true`. Set `oidc_username` to the one username allowed in. `oidc_sub` (an id that never changes) is an alternative; `oidc_email` trusts the provider's email claim, so use it only with a provider you run yourself. |
 | `api_only` | No browser login. API key or Basic only. |
 
 ## First login
@@ -45,10 +45,14 @@ authentication:
   oidc_metadata_url: https://auth.example.com/application/o/qbit-manage/.well-known/openid-configuration
   oidc_client_id: <client id>
   oidc_client_secret: <client secret>
-  oidc_sub: <your user's sub claim>
+  oidc_username: <your Authentik username>
 ```
 
-3. Use `oidc_email` instead of `oidc_sub` only if your provider marks the address as verified. Only one identity is allowed.
+3. Only one identity is allowed. If you set more than one, `oidc_username` wins, then `oidc_sub`, then `oidc_email`.
+   - `oidc_username` is matched exactly against the `preferred_username` claim, so the provider must send the `profile` scope. qbit_manage requests `openid email profile`.
+   - Usernames are case-sensitive. If you rename the user at the provider, you are locked out until you change `oidc_username`. If you need an id that never changes, use `oidc_sub` (the `sub` claim) instead. Authentik's default `sub` is a long hashed user id.
+   - `oidc_email` works only if your provider marks the address as verified.
+4. The redirect URI to register at the provider is `<public_url>/auth/oidc/callback`.
 
 ## Upgrading to 5.0
 

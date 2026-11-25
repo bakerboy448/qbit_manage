@@ -179,6 +179,7 @@ class AuthSettings(BaseModel):
     oidc_metadata_url: str = ""
     oidc_client_id: str = ""
     oidc_client_secret: str = ""
+    oidc_username: str = ""
     oidc_sub: str = ""
     oidc_email: str = ""
     trusted_proxies: list[str] = []  # peers whose X-Forwarded-For names the client
@@ -220,6 +221,7 @@ class SecuritySettingsRequest(BaseModel):
     oidc_metadata_url: str = ""
     oidc_client_id: str = ""
     oidc_client_secret: str = ""
+    oidc_username: str = ""
     oidc_sub: str = ""
     oidc_email: str = ""
     trusted_proxies: list[str] = []
@@ -305,7 +307,7 @@ def has_credentials(s: AuthSettings) -> bool:
     if s.mode == "local":
         return local
     if s.mode == "oidc":
-        return bool(s.oidc_metadata_url and s.oidc_client_id and s.public_url and (s.oidc_sub or s.oidc_email))
+        return bool(s.oidc_metadata_url and s.oidc_client_id and s.public_url and (s.oidc_username or s.oidc_sub or s.oidc_email))
     return bool(s.api_key) or local
 
 
@@ -491,10 +493,10 @@ def ensure_credentials(path: Path, env) -> bool:
     except Exception as e:
         logger.error(f"Web server not started: cannot read the authentication settings in {path}: {_clean_error(e)}")
         return False
-    if settings.mode == "oidc" and settings.oidc_email and not settings.oidc_sub:
+    if settings.mode == "oidc" and settings.oidc_email and not (settings.oidc_username or settings.oidc_sub):
         logger.warning(
-            "oidc_email without oidc_sub trusts the provider's email claim. Use it only with a provider you run "
-            "yourself, and prefer oidc_sub."
+            "oidc_email without oidc_username or oidc_sub trusts the provider's email claim. Use it only with a "
+            "provider you run yourself, and prefer oidc_username (or oidc_sub)."
         )
     overrides = {}
     if env.get("QBT_PUBLIC_URL"):
@@ -708,7 +710,9 @@ def oidc_client(settings: AuthSettings):
 
 
 def oidc_identity_allowed(userinfo: dict, settings: AuthSettings) -> bool:
-    """Single user: the configured sub, or the configured email when the provider says it is verified."""
+    """Single user: the configured username, else the configured sub, else the email when the provider says it is verified."""
+    if settings.oidc_username:  # authoritative: the username is what a person can actually look up
+        return hmac.compare_digest(str(userinfo.get("preferred_username", "")).encode(), settings.oidc_username.encode())
     if settings.oidc_sub:  # a configured subject is authoritative; the email is only for installs without one
         return hmac.compare_digest(str(userinfo.get("sub", "")).encode(), settings.oidc_sub.encode())
     email = userinfo.get("email")
@@ -973,7 +977,10 @@ def build_auth_router(store: AuthStore, base_url: str) -> APIRouter:
             logger.info(f"OIDC login failed from {ip}: {clean_for_log(e)}")
             return PlainTextResponse("Authentication failed", status_code=401)
         if not oidc_identity_allowed(userinfo, settings):
-            logger.info(f"OIDC login refused for sub={clean_for_log(userinfo.get('sub', ''))} from {ip}")
+            logger.info(
+                f"OIDC login refused for username={clean_for_log(userinfo.get('preferred_username', ''))} "
+                f"sub={clean_for_log(userinfo.get('sub', ''))} from {ip}"
+            )
             return PlainTextResponse("This account is not allowed", status_code=403)
         try:
             auth_time = int(userinfo.get("auth_time", 0))
